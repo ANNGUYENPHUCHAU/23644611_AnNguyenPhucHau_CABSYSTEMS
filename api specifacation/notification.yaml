@@ -1,75 +1,55 @@
 openapi: 3.0.3
 info:
-  title: CAB System - Notification Service API
+  title: CAB System - Rating Service API
   description: |
-    API truy vấn thông báo cho khách hàng và tài xế.
-    Traceability: FR16-FR17, BR07.
+    API đánh giá tài xế sau chuyến.
+    Lịch sử chuyến thuộc Trip Service; Rating Service chỉ sở hữu nghiệp vụ đánh giá.
+    Traceability: FR18, UC05.
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8085/api/v1
-    description: Local Notification Service
+  - url: http://localhost:8086/api/v1
+    description: Local Rating Service
 
 tags:
-  - name: Customer Notification
-    description: FR16 - Thông báo cho khách hàng
-  - name: Driver Notification
-    description: FR17 - Thông báo cho tài xế
+  - name: Rating
+    description: FR18 - Đánh giá tài xế
 
 paths:
-  /customers/{customerId}/notifications:
-    get:
-      tags: [Customer Notification]
-      summary: Xem thông báo của khách hàng
-      description: |
-        FR16. Thông báo khi tiếp nhận yêu cầu, tài xế nhận chuyến,
-        tài xế đến nơi, hoàn thành chuyến và có kết quả thanh toán.
-      operationId: getCustomerNotifications
+  /trips/{tripId}/ratings:
+    post:
+      tags: [Rating]
+      summary: Đánh giá tài xế
+      description: FR18, UC05. Khách hàng đánh giá tài xế sau khi chuyến hoàn thành.
+      operationId: createRating
       security:
         - bearerAuth: []
       parameters:
-        - name: customerId
+        - name: tripId
           in: path
           required: true
           schema:
             type: string
-            example: KH001
+            example: CD001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequest'
       responses:
-        '200':
-          description: Danh sách thông báo
+        '201':
+          description: Đánh giá thành công
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationList'
+                $ref: '#/components/schemas/RatingResponse'
+        '400':
+          description: Điểm đánh giá không hợp lệ, chuyến chưa hoàn thành hoặc đã đánh giá
         '401':
           description: Chưa xác thực
-
-  /drivers/{driverId}/notifications:
-    get:
-      tags: [Driver Notification]
-      summary: Xem thông báo của tài xế
-      description: |
-        FR17. Thông báo khi có chuyến mới hoặc có thay đổi
-        liên quan đến chuyến đang thực hiện.
-      operationId: getDriverNotifications
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: driverId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: TX001
-      responses:
-        '200':
-          description: Danh sách thông báo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationList'
-        '401':
-          description: Chưa xác thực
+        '404':
+          description: Không tìm thấy chuyến
 
 components:
   securitySchemes:
@@ -79,44 +59,42 @@ components:
       bearerFormat: JWT
 
   schemas:
-    Notification:
+    RatingRequest:
       type: object
-      required: [notificationId, recipientType, recipientId, eventType, message]
+      required: [score]
       properties:
-        notificationId:
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
           type: string
-          example: NT001
-        recipientType:
+          example: Tài xế phục vụ tốt.
+
+    RatingResponse:
+      type: object
+      required: [ratingId, tripId, driverId, customerId, score]
+      properties:
+        ratingId:
           type: string
-          enum: [CUSTOMER, DRIVER]
-        recipientId:
-          type: string
-          example: KH001
+          example: RT001
         tripId:
           type: string
-          nullable: true
           example: CD001
-        eventType:
+        driverId:
           type: string
-          enum:
-            - BOOKING_RECEIVED
-            - DRIVER_ASSIGNED
-            - DRIVER_ARRIVED
-            - TRIP_COMPLETED
-            - PAYMENT_RESULT
-            - NEW_TRIP
-            - TRIP_UPDATED
-        message:
+          example: TX001
+        customerId:
           type: string
-          example: Tài xế đã nhận chuyến của bạn.
+          example: KH001
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
         createdAt:
           type: string
           format: date-time
-
-    NotificationList:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Notification'
