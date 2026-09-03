@@ -1,213 +1,335 @@
 openapi: 3.0.3
-
 info:
   title: CAB System - Driver Service API
-  description: API quản lý tài xế, phương tiện và vị trí tài xế
+  description: |
+    API quản lý hồ sơ, phương tiện, trạng thái sẵn sàng,
+    nhận/từ chối chuyến và vị trí tài xế.
+    Traceability: FR02, FR08-FR11, UC06-UC09, AC02, AC04-AC06.
   version: 1.0.0
 
 servers:
   - url: http://localhost:8082/api/v1
-    description: Local server
+    description: Local Driver Service
 
 tags:
   - name: Driver
-    description: Quản lý tài xế
+    description: FR02, FR08 - Quản lý tài xế
   - name: Vehicle
-    description: Quản lý phương tiện
+    description: FR02 - Quản lý phương tiện
+  - name: Trip Acceptance
+    description: FR09 - Nhận hoặc từ chối chuyến
   - name: Location
-    description: Quản lý vị trí tài xế
+    description: FR11 - Cập nhật vị trí tài xế
 
 paths:
-
-  /drivers:
-    post:
-      tags:
-        - Driver
-      summary: Tạo tài khoản tài xế
-      operationId: createDriver
-
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DriverRequest'
-
-      responses:
-        '201':
-          description: Tạo tài khoản tài xế thành công
-
-        '400':
-          description: Dữ liệu không hợp lệ
-
-  /drivers/{driverId}:
+  /drivers/{driverId}/profile:
     get:
-      tags:
-        - Driver
-      summary: Xem thông tin tài xế
-      operationId: getDriver
-
+      tags: [Driver]
+      summary: Xem hồ sơ tài xế
+      description: FR02, UC06, AC02.
+      operationId: getDriverProfile
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/DriverId'
-
       responses:
         '200':
-          description: Lấy thông tin thành công
+          description: Lấy hồ sơ thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DriverResponse'
-
+        '401':
+          description: Chưa xác thực
         '404':
           description: Không tìm thấy tài xế
 
-  /drivers/{driverId}/status:
     put:
-      tags:
-        - Driver
-      summary: Cập nhật trạng thái hoạt động
-      operationId: updateDriverStatus
-
+      tags: [Driver]
+      summary: Cập nhật hồ sơ tài xế
+      description: FR02, UC06, AC02.
+      operationId: updateDriverProfile
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/DriverId'
-
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DriverStatusRequest'
-
+              $ref: '#/components/schemas/UpdateDriverRequest'
       responses:
         '200':
-          description: Cập nhật trạng thái thành công
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+        '400':
+          description: Dữ liệu không hợp lệ
+        '401':
+          description: Chưa xác thực
 
   /drivers/{driverId}/vehicle:
-    put:
-      tags:
-        - Vehicle
-      summary: Cập nhật thông tin phương tiện
-      operationId: updateVehicle
-
+    get:
+      tags: [Vehicle]
+      summary: Xem phương tiện của tài xế
+      description: FR02, UC06, AC02.
+      operationId: getDriverVehicle
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/DriverId'
+      responses:
+        '200':
+          description: Lấy thông tin phương tiện thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401':
+          description: Chưa xác thực
+        '404':
+          description: Không tìm thấy phương tiện
 
+    put:
+      tags: [Vehicle]
+      summary: Cập nhật phương tiện
+      description: FR02, UC06, AC02.
+      operationId: updateDriverVehicle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/VehicleRequest'
-
       responses:
         '200':
           description: Cập nhật phương tiện thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          description: Thông tin phương tiện không hợp lệ
+        '401':
+          description: Chưa xác thực
 
-  /drivers/{driverId}/location:
-    post:
-      tags:
-        - Location
-      summary: Cập nhật vị trí tài xế
-      operationId: updateDriverLocation
-
+  /drivers/{driverId}/availability:
+    put:
+      tags: [Driver]
+      summary: Cập nhật trạng thái sẵn sàng
+      description: |
+        FR08, UC06, AC02. BRU01: chỉ tài xế ở trạng thái READY
+        mới được hệ thống đề xuất chuyến.
+      operationId: updateDriverAvailability
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/DriverId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '200':
+          description: Cập nhật trạng thái thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverStatusResponse'
+        '400':
+          description: Trạng thái không hợp lệ
+        '401':
+          description: Chưa xác thực
 
+  /trips/{tripId}/acceptance:
+    put:
+      tags: [Trip Acceptance]
+      summary: Nhận hoặc từ chối chuyến
+      description: |
+        FR09, UC07, AC04. Nếu tài xế từ chối hoặc hết thời gian chờ,
+        hệ thống tiếp tục tìm tài xế khác theo EXC01.
+      operationId: handleTripAcceptance
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripAcceptanceRequest'
+      responses:
+        '200':
+          description: Đã xử lý phản hồi chuyến
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripAcceptanceResponse'
+        '400':
+          description: Phản hồi không hợp lệ hoặc chuyến không còn chờ
+        '401':
+          description: Chưa xác thực
+        '404':
+          description: Không tìm thấy chuyến
+
+  /drivers/{driverId}/location:
+    put:
+      tags: [Location]
+      summary: Cập nhật vị trí tài xế
+      description: FR11, UC09, AC06.
+      operationId: updateDriverLocation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LocationRequest'
-
       responses:
         '200':
-          description: Vị trí được cập nhật
+          description: Cập nhật vị trí thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          description: Tọa độ không hợp lệ
+        '401':
+          description: Chưa xác thực
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   parameters:
-
     DriverId:
       name: driverId
       in: path
       required: true
       schema:
-        type: integer
-      example: 1
+        type: string
+        example: TX001
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: CD001
 
   schemas:
-
-    DriverRequest:
+    UpdateDriverRequest:
       type: object
-      required:
-        - fullName
-        - phone
-        - email
       properties:
         fullName:
           type: string
           example: Tran Van B
         phone:
           type: string
-          example: "0912345678"
-        email:
-          type: string
-          format: email
-          example: driver@gmail.com
+          example: '0912345678'
 
     DriverResponse:
       type: object
+      required: [driverId, fullName, phone, availability]
       properties:
         driverId:
-          type: integer
-          example: 1
+          type: string
+          example: TX001
         fullName:
           type: string
           example: Tran Van B
         phone:
           type: string
-          example: "0912345678"
-        email:
+          example: '0912345678'
+        availability:
           type: string
-          example: driver@gmail.com
-        status:
-          type: string
-          enum:
-            - AVAILABLE
-            - UNAVAILABLE
-          example: AVAILABLE
-
-    DriverStatusRequest:
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - AVAILABLE
-            - UNAVAILABLE
-          example: AVAILABLE
+          enum: [READY, BUSY, OFFLINE]
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
 
     VehicleRequest:
       type: object
-      required:
-        - vehicleType
-        - licensePlate
+      required: [vehicleType, licensePlate]
       properties:
         vehicleType:
           type: string
-          example: CAR
+          enum: [MOTORBIKE, CAR]
         licensePlate:
           type: string
           example: 51A-12345
 
+    Vehicle:
+      type: object
+      required: [vehicleId, vehicleType, licensePlate]
+      properties:
+        vehicleId:
+          type: string
+          example: VH001
+        vehicleType:
+          type: string
+          enum: [MOTORBIKE, CAR]
+        licensePlate:
+          type: string
+          example: 51A-12345
+
+    AvailabilityRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [READY, BUSY, OFFLINE]
+
+    DriverStatusResponse:
+      type: object
+      properties:
+        driverId:
+          type: string
+          example: TX001
+        status:
+          type: string
+          enum: [READY, BUSY, OFFLINE]
+
+    TripAcceptanceRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [ACCEPT, REJECT]
+
+    TripAcceptanceResponse:
+      type: object
+      properties:
+        tripId:
+          type: string
+          example: CD001
+        driverId:
+          type: string
+          example: TX001
+        action:
+          type: string
+          enum: [ACCEPT, REJECT]
+
     LocationRequest:
       type: object
-      required:
-        - latitude
-        - longitude
+      required: [latitude, longitude]
       properties:
         latitude:
           type: number
@@ -217,3 +339,19 @@ components:
           type: number
           format: double
           example: 106.6297
+
+    Location:
+      type: object
+      properties:
+        driverId:
+          type: string
+          example: TX001
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        updatedAt:
+          type: string
+          format: date-time
