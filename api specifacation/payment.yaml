@@ -1,169 +1,175 @@
 openapi: 3.0.3
-
 info:
   title: CAB System - Payment Service API
-  description: API tính cước và thanh toán chuyến xe
+  description: |
+    API tính cước và thanh toán chuyến xe.
+    Traceability: FR13-FR15, UC14, AC07-AC08, BRU03.
   version: 1.0.0
 
 servers:
   - url: http://localhost:8084/api/v1
-    description: Local server
+    description: Local Payment Service
 
 tags:
+  - name: Fare
+    description: FR13 - Tính tiền cước
   - name: Payment
-    description: Thanh toán chuyến xe
+    description: FR14 - Thanh toán
+  - name: Retry
+    description: FR15 - Xử lý thanh toán lỗi
 
 paths:
-
-  /payments/{tripId}/fare:
+  /trips/{tripId}/fare:
     get:
-      tags:
-        - Payment
-      summary: Xem số tiền phải trả
+      tags: [Fare]
+      summary: Tính và trả về cước chuyến xe
+      description: |
+        FR13, UC14, AC07. Chỉ xác định cước sau khi chuyến hoàn thành,
+        dựa trên loại dịch vụ và thông tin chuyến.
       operationId: calculateFare
-
+      security:
+        - bearerAuth: []
       parameters:
-        - name: tripId
-          in: path
-          required: true
-          schema:
-            type: integer
-
+        - $ref: '#/components/parameters/TripId'
       responses:
         '200':
-          description: Số tiền phải trả
+          description: Tính cước thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FareResponse'
-
         '400':
-          description: Chuyến xe chưa hoàn thành
+          description: Chuyến chưa hoàn thành hoặc dữ liệu chuyến không hợp lệ
+        '404':
+          description: Không tìm thấy chuyến
 
-  /payments:
+  /trips/{tripId}/payments:
     post:
-      tags:
-        - Payment
-      summary: Thực hiện thanh toán
+      tags: [Payment]
+      summary: Thanh toán chuyến xe
+      description: |
+        FR14, UC14, AC08, BRU03.
+        Hỗ trợ tiền mặt hoặc thanh toán điện tử qua bên thứ ba.
+        CAB System không lưu thông tin thẻ hoặc tài khoản thanh toán nhạy cảm.
       operationId: createPayment
-
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TripId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/PaymentRequest'
-
-      responses:
-        '201':
-          description: Thanh toán được ghi nhận
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaymentResponse'
-
-        '400':
-          description: Dữ liệu thanh toán không hợp lệ
-
-        '402':
-          description: Thanh toán điện tử thất bại
-
-  /payments/{paymentId}:
-    get:
-      tags:
-        - Payment
-      summary: Xem kết quả thanh toán
-      operationId: getPayment
-
-      parameters:
-        - name: paymentId
-          in: path
-          required: true
-          schema:
-            type: integer
-
       responses:
         '200':
-          description: Kết quả thanh toán
+          description: Thanh toán thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Phương thức thanh toán không hợp lệ hoặc chuyến chưa đủ điều kiện
+        '402':
+          description: Thanh toán điện tử thất bại
+        '404':
+          description: Không tìm thấy chuyến
 
   /payments/{paymentId}/retry:
     post:
-      tags:
-        - Payment
-      summary: Xử lý lại thanh toán điện tử
+      tags: [Retry]
+      summary: Xử lý thanh toán lại
+      description: FR15, UC14, AC08. Chỉ áp dụng khi giao dịch điện tử trước đó thất bại.
       operationId: retryPayment
-
+      security:
+        - bearerAuth: []
       parameters:
         - name: paymentId
           in: path
           required: true
           schema:
-            type: integer
-
+            type: string
+            example: PAY001
       responses:
         '200':
-          description: Yêu cầu thanh toán lại được tiếp nhận
+          description: Thanh toán lại thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Giao dịch không ở trạng thái có thể thử lại
+        '402':
+          description: Thanh toán tiếp tục thất bại
+        '404':
+          description: Không tìm thấy giao dịch
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: CD001
 
   schemas:
-
     FareResponse:
       type: object
+      required: [tripId, fare]
       properties:
         tripId:
-          type: integer
-          example: 1001
-        amount:
+          type: string
+          example: CD001
+        fare:
           type: number
           format: double
           example: 85000
+        currency:
+          type: string
+          example: VND
 
     PaymentRequest:
       type: object
-      required:
-        - tripId
-        - paymentMethod
+      required: [paymentMethod]
       properties:
-        tripId:
-          type: integer
-          example: 1001
         paymentMethod:
           type: string
-          enum:
-            - CASH
-            - ELECTRONIC
+          enum: [CASH, ELECTRONIC]
           example: ELECTRONIC
 
     PaymentResponse:
       type: object
+      required: [paymentId, tripId, amount, paymentMethod, status]
       properties:
         paymentId:
-          type: integer
-          example: 5001
+          type: string
+          example: PAY001
         tripId:
-          type: integer
-          example: 1001
+          type: string
+          example: CD001
         amount:
           type: number
           format: double
           example: 85000
+        currency:
+          type: string
+          example: VND
         paymentMethod:
           type: string
-          enum:
-            - CASH
-            - ELECTRONIC
-        paymentStatus:
+          enum: [CASH, ELECTRONIC]
+        status:
           type: string
-          enum:
-            - PENDING
-            - SUCCESS
-            - FAILED
+          enum: [PENDING, SUCCESS, FAILED]
         transactionId:
-          type: integer
+          type: string
           nullable: true
-          example: 9001
+          example: TXN001
