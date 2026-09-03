@@ -1,78 +1,101 @@
 openapi: 3.0.3
-
 info:
   title: CAB System - Notification Service API
-  description: API gửi thông báo cho khách hàng và tài xế
+  description: |
+    API truy vấn thông báo cho khách hàng và tài xế.
+    Traceability: FR16-FR17, BR07.
   version: 1.0.0
 
 servers:
   - url: http://localhost:8085/api/v1
-    description: Local server
+    description: Local Notification Service
 
 tags:
-  - name: Notification
-    description: Quản lý thông báo
+  - name: Customer Notification
+    description: FR16 - Thông báo cho khách hàng
+  - name: Driver Notification
+    description: FR17 - Thông báo cho tài xế
 
 paths:
-
-  /notifications:
-    post:
-      tags:
-        - Notification
-      summary: Gửi thông báo
-      operationId: sendNotification
-
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationRequest'
-
-      responses:
-        '202':
-          description: Yêu cầu gửi thông báo được tiếp nhận
-
-        '400':
-          description: Dữ liệu thông báo không hợp lệ
-
-  /notifications:
+  /customers/{customerId}/notifications:
     get:
-      tags:
-        - Notification
-      summary: Xem danh sách thông báo
-      operationId: getNotifications
-
+      tags: [Customer Notification]
+      summary: Xem thông báo của khách hàng
+      description: |
+        FR16. Thông báo khi tiếp nhận yêu cầu, tài xế nhận chuyến,
+        tài xế đến nơi, hoàn thành chuyến và có kết quả thanh toán.
+      operationId: getCustomerNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: KH001
       responses:
         '200':
           description: Danh sách thông báo
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NotificationResponse'
+                $ref: '#/components/schemas/NotificationList'
+        '401':
+          description: Chưa xác thực
+
+  /drivers/{driverId}/notifications:
+    get:
+      tags: [Driver Notification]
+      summary: Xem thông báo của tài xế
+      description: |
+        FR17. Thông báo khi có chuyến mới hoặc có thay đổi
+        liên quan đến chuyến đang thực hiện.
+      operationId: getDriverNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: TX001
+      responses:
+        '200':
+          description: Danh sách thông báo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        '401':
+          description: Chưa xác thực
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
-
-    NotificationRequest:
+    Notification:
       type: object
-      required:
-        - recipientId
-        - recipientType
-        - eventType
-        - message
+      required: [notificationId, recipientType, recipientId, eventType, message]
       properties:
-        recipientId:
-          type: integer
-          example: 1
+        notificationId:
+          type: string
+          example: NT001
         recipientType:
           type: string
-          enum:
-            - CUSTOMER
-            - DRIVER
+          enum: [CUSTOMER, DRIVER]
+        recipientId:
+          type: string
+          example: KH001
+        tripId:
+          type: string
+          nullable: true
+          example: CD001
         eventType:
           type: string
           enum:
@@ -81,29 +104,19 @@ components:
             - DRIVER_ARRIVED
             - TRIP_COMPLETED
             - PAYMENT_RESULT
-            - TRIP_UPDATED
             - NEW_TRIP
+            - TRIP_UPDATED
         message:
           type: string
           example: Tài xế đã nhận chuyến của bạn.
-
-    NotificationResponse:
-      type: object
-      properties:
-        notificationId:
-          type: integer
-          example: 1
-        recipientId:
-          type: integer
-          example: 1
-        recipientType:
-          type: string
-          example: CUSTOMER
-        eventType:
-          type: string
-          example: DRIVER_ASSIGNED
-        message:
-          type: string
-        sentAt:
+        createdAt:
           type: string
           format: date-time
+
+    NotificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
