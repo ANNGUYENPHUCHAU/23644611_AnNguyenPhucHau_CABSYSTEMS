@@ -1,299 +1,302 @@
 openapi: 3.0.3
-
 info:
   title: CAB System - Trip Service API
-  description: API đặt xe, phân công tài xế và quản lý chuyến xe
+  description: |
+    API đặt chuyến, điều phối tài xế, cập nhật/truy vấn trạng thái,
+    theo dõi vị trí/ETA và lịch sử chuyến.
+    Traceability: FR03-FR07, FR10-FR12, FR18, UC02-UC04, AC03-AC06.
   version: 1.0.0
 
 servers:
   - url: http://localhost:8083/api/v1
-    description: Local server
+    description: Local Trip Service
 
 tags:
+  - name: Booking
+    description: FR03-FR04 - Tạo yêu cầu đặt chuyến
+  - name: Matching
+    description: FR05-FR07 - Tìm và gửi yêu cầu cho tài xế
   - name: Trip
-    description: Quản lý chuyến xe
-  - name: Dispatch
-    description: Tìm và phân công tài xế
+    description: FR10, FR12 - Quản lý và theo dõi chuyến
+  - name: History
+    description: FR18 - Xem lịch sử chuyến
 
 paths:
-
   /trips:
     post:
-      tags:
-        - Trip
-      summary: Tạo yêu cầu đặt xe
+      tags: [Booking]
+      summary: Tạo yêu cầu đặt chuyến
+      description: FR03, FR04, UC02, AC03.
       operationId: createTrip
-
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateTripRequest'
-
       responses:
         '201':
-          description: Yêu cầu đặt xe được tạo
+          description: Tạo yêu cầu chuyến thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TripResponse'
-
         '400':
-          description: Dữ liệu đặt xe không hợp lệ
+          description: Thiếu hoặc sai thông tin hành trình
+        '401':
+          description: Chưa xác thực
 
   /trips/{tripId}:
     get:
-      tags:
-        - Trip
-      summary: Xem thông tin chuyến xe
+      tags: [Trip]
+      summary: Xem thông tin chuyến
+      description: FR12, UC03.
       operationId: getTrip
-
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TripId'
-
       responses:
         '200':
-          description: Thông tin chuyến xe
+          description: Lấy thông tin thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TripResponse'
-
+        '401':
+          description: Chưa xác thực
         '404':
-          description: Không tìm thấy chuyến xe
+          description: Không tìm thấy chuyến
 
   /trips/{tripId}/status:
     put:
-      tags:
-        - Trip
-      summary: Cập nhật trạng thái chuyến xe
+      tags: [Trip]
+      summary: Cập nhật trạng thái chuyến
+      description: FR10, UC08, AC05.
       operationId: updateTripStatus
-
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TripId'
-
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TripStatusRequest'
-
       responses:
         '200':
-          description: Cập nhật trạng thái thành công
-
-  /trips/{tripId}/accept:
-    post:
-      tags:
-        - Dispatch
-      summary: Tài xế nhận chuyến
-      operationId: acceptTrip
-
-      parameters:
-        - $ref: '#/components/parameters/TripId'
-
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DriverActionRequest'
-
-      responses:
-        '200':
-          description: Tài xế đã nhận chuyến
-
-        '409':
-          description: Chuyến không còn khả dụng
-
-  /trips/{tripId}/reject:
-    post:
-      tags:
-        - Dispatch
-      summary: Tài xế từ chối chuyến
-      operationId: rejectTrip
-
-      parameters:
-        - $ref: '#/components/parameters/TripId'
-
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DriverActionRequest'
-
-      responses:
-        '200':
-          description: Tài xế từ chối chuyến và hệ thống tiếp tục tìm tài xế khác
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '400':
+          description: Chuyển trạng thái không hợp lệ
+        '401':
+          description: Chưa xác thực
 
   /trips/{tripId}/driver:
     get:
-      tags:
-        - Trip
-      summary: Xem tài xế của chuyến xe
-      operationId: getTripDriver
-
+      tags: [Trip]
+      summary: Xem thông tin tài xế của chuyến
+      description: FR12, UC03.
+      operationId: getAssignedDriver
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TripId'
-
       responses:
         '200':
           description: Thông tin tài xế
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DriverResponse'
-
+                $ref: '#/components/schemas/AssignedDriver'
         '404':
-          description: Chuyến chưa có tài xế
+          description: Chưa có tài xế được phân công
 
   /trips/{tripId}/eta:
     get:
-      tags:
-        - Trip
-      summary: Xem thời gian dự kiến tài xế đến
+      tags: [Trip]
+      summary: Xem thời gian đến dự kiến
+      description: FR12, UC03, AC06.
       operationId: getTripEta
-
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TripId'
-
       responses:
         '200':
-          description: Thời gian dự kiến đến
+          description: Lấy ETA thành công
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/EtaResponse'
+        '404':
+          description: Không tìm thấy chuyến
 
-  /trips/history:
+  /customers/{customerId}/trips:
     get:
-      tags:
-        - Trip
-      summary: Xem lịch sử chuyến xe
-      operationId: getTripHistory
-
+      tags: [History]
+      summary: Xem lịch sử chuyến của khách hàng
+      description: FR18, UC04.
+      operationId: getCustomerTripHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: KH001
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: Danh sách lịch sử chuyến xe
+          description: Lấy lịch sử thành công
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TripResponse'
+                $ref: '#/components/schemas/TripHistoryResponse'
+        '401':
+          description: Chưa xác thực
+
+  /internal/trips/{tripId}/dispatch:
+    post:
+      tags: [Matching]
+      summary: Yêu cầu điều phối tài xế
+      description: |
+        API nội bộ. FR05-FR07, UC02, AC04.
+        Hệ thống ưu tiên tài xế phù hợp, đang READY và gần khách hàng.
+        Nếu tài xế từ chối hoặc timeout, tiếp tục tìm tài xế khác theo EXC01.
+      operationId: dispatchTrip
+      security:
+        - serviceAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      responses:
+        '202':
+          description: Yêu cầu điều phối đã được tiếp nhận
+        '404':
+          description: Không tìm thấy chuyến
+        '409':
+          description: Chuyến không ở trạng thái có thể điều phối
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   parameters:
-
     TripId:
       name: tripId
       in: path
       required: true
       schema:
-        type: integer
-      example: 1001
+        type: string
+        example: CD001
 
   schemas:
+    Location:
+      type: object
+      required: [address]
+      properties:
+        address:
+          type: string
+          example: 123 Nguyen Hue, Quan 1, TP.HCM
+        latitude:
+          type: number
+          format: double
+          example: 10.7769
+        longitude:
+          type: number
+          format: double
+          example: 106.7009
 
     CreateTripRequest:
       type: object
-      required:
-        - customerId
-        - pickupLocation
-        - destination
-        - vehicleType
+      required: [pickupLocation, destination, vehicleType]
       properties:
-        customerId:
-          type: integer
-          example: 1
         pickupLocation:
-          type: string
-          example: "IUH, Go Vap, Ho Chi Minh City"
+          $ref: '#/components/schemas/Location'
         destination:
-          type: string
-          example: "Ben Thanh Market, Ho Chi Minh City"
+          $ref: '#/components/schemas/Location'
         vehicleType:
           type: string
+          enum: [MOTORBIKE, CAR]
           example: CAR
+
+    TripStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [DRIVER_ARRIVED, PASSENGER_PICKED_UP, IN_PROGRESS, COMPLETED]
 
     TripResponse:
       type: object
+      required: [tripId, customerId, pickupLocation, destination, vehicleType, status]
       properties:
         tripId:
-          type: integer
-          example: 1001
+          type: string
+          example: CD001
         customerId:
-          type: integer
-          example: 1
+          type: string
+          example: KH001
         driverId:
-          type: integer
+          type: string
           nullable: true
-          example: 25
+          example: TX001
         pickupLocation:
-          type: string
-          example: "IUH, Go Vap"
+          $ref: '#/components/schemas/Location'
         destination:
-          type: string
-          example: "Ben Thanh Market"
+          $ref: '#/components/schemas/Location'
         vehicleType:
           type: string
-          example: CAR
+          enum: [MOTORBIKE, CAR]
         status:
           type: string
-          enum:
-            - SEARCHING_DRIVER
-            - DRIVER_ASSIGNED
-            - DRIVER_ARRIVED
-            - PASSENGER_PICKED_UP
-            - IN_PROGRESS
-            - COMPLETED
+          enum: [SEARCHING_DRIVER, DRIVER_ACCEPTED, DRIVER_ARRIVED, PASSENGER_PICKED_UP, IN_PROGRESS, COMPLETED]
         fare:
           type: number
           format: double
           nullable: true
           example: 85000
 
-    TripStatusRequest:
+    AssignedDriver:
       type: object
-      required:
-        - status
       properties:
-        status:
+        driverId:
           type: string
-          enum:
-            - DRIVER_ARRIVED
-            - PASSENGER_PICKED_UP
-            - IN_PROGRESS
-            - COMPLETED
-
-    DriverActionRequest:
-      type: object
-      required:
-        - driverId
-      properties:
-        driverId:
-          type: integer
-          example: 25
-
-    DriverResponse:
-      type: object
-      properties:
-        driverId:
-          type: integer
-          example: 25
+          example: TX001
         fullName:
           type: string
           example: Tran Van B
         phone:
           type: string
-          example: "0912345678"
-        vehicleType:
-          type: string
-          example: CAR
+          example: '0912345678'
         licensePlate:
           type: string
           example: 51A-12345
@@ -301,6 +304,40 @@ components:
     EtaResponse:
       type: object
       properties:
-        estimatedArrivalMinutes:
+        tripId:
+          type: string
+          example: CD001
+        estimatedMinutes:
           type: integer
           example: 7
+        calculatedAt:
+          type: string
+          format: date-time
+
+    TripHistoryItem:
+      allOf:
+        - $ref: '#/components/schemas/TripResponse'
+        - type: object
+          properties:
+            paidAmount:
+              type: number
+              format: double
+              nullable: true
+              example: 85000
+
+    TripHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripHistoryItem'
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 10
