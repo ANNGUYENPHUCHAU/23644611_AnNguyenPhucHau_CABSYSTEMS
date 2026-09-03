@@ -1,1 +1,169 @@
+openapi: 3.0.3
 
+info:
+  title: CAB System - Payment Service API
+  description: API tính cước và thanh toán chuyến xe
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8084/api/v1
+    description: Local server
+
+tags:
+  - name: Payment
+    description: Thanh toán chuyến xe
+
+paths:
+
+  /payments/{tripId}/fare:
+    get:
+      tags:
+        - Payment
+      summary: Xem số tiền phải trả
+      operationId: calculateFare
+
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Số tiền phải trả
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FareResponse'
+
+        '400':
+          description: Chuyến xe chưa hoàn thành
+
+  /payments:
+    post:
+      tags:
+        - Payment
+      summary: Thực hiện thanh toán
+      operationId: createPayment
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+
+      responses:
+        '201':
+          description: Thanh toán được ghi nhận
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+        '400':
+          description: Dữ liệu thanh toán không hợp lệ
+
+        '402':
+          description: Thanh toán điện tử thất bại
+
+  /payments/{paymentId}:
+    get:
+      tags:
+        - Payment
+      summary: Xem kết quả thanh toán
+      operationId: getPayment
+
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Kết quả thanh toán
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /payments/{paymentId}/retry:
+    post:
+      tags:
+        - Payment
+      summary: Xử lý lại thanh toán điện tử
+      operationId: retryPayment
+
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Yêu cầu thanh toán lại được tiếp nhận
+
+components:
+
+  schemas:
+
+    FareResponse:
+      type: object
+      properties:
+        tripId:
+          type: integer
+          example: 1001
+        amount:
+          type: number
+          format: double
+          example: 85000
+
+    PaymentRequest:
+      type: object
+      required:
+        - tripId
+        - paymentMethod
+      properties:
+        tripId:
+          type: integer
+          example: 1001
+        paymentMethod:
+          type: string
+          enum:
+            - CASH
+            - ELECTRONIC
+          example: ELECTRONIC
+
+    PaymentResponse:
+      type: object
+      properties:
+        paymentId:
+          type: integer
+          example: 5001
+        tripId:
+          type: integer
+          example: 1001
+        amount:
+          type: number
+          format: double
+          example: 85000
+        paymentMethod:
+          type: string
+          enum:
+            - CASH
+            - ELECTRONIC
+        paymentStatus:
+          type: string
+          enum:
+            - PENDING
+            - SUCCESS
+            - FAILED
+        transactionId:
+          type: integer
+          nullable: true
+          example: 9001
