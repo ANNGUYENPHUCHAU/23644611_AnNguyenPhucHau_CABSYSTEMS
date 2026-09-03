@@ -1,144 +1,452 @@
 openapi: 3.0.3
-
 info:
   title: CAB System - Operations Service API
-  description: API quản lý và giám sát hoạt động vận hành CAB System
+  description: |
+    API dành cho Operations Staff để quản lý thực thể, giám sát,
+    tra cứu giao dịch, audit log và báo cáo.
+    Traceability: FR19-FR21, UC10-UC13, BRU04-BRU05.
   version: 1.0.0
 
 servers:
   - url: http://localhost:8087/api/v1
-    description: Local server
+    description: Local Operations Service
 
 tags:
   - name: Customers
-    description: Quản lý khách hàng
+    description: FR19, UC10 - Quản lý khách hàng
   - name: Drivers
-    description: Quản lý tài xế
+    description: FR19, UC11 - Quản lý tài xế
   - name: Vehicles
-    description: Quản lý phương tiện
+    description: FR19, UC11 - Quản lý phương tiện
   - name: Trips
-    description: Quản lý và giám sát chuyến xe
+    description: FR19, UC12 - Quản lý và giám sát chuyến
   - name: Transactions
-    description: Tra cứu lịch sử giao dịch
+    description: UC13 - Tra cứu lịch sử giao dịch
+  - name: Audit
+    description: FR20, BRU05 - Lưu vết thao tác quan trọng
+  - name: Reports
+    description: FR21 - Báo cáo thống kê
 
 paths:
-
-  /customers:
+  /admin/customers:
     get:
-      tags:
-        - Customers
-      summary: Danh sách khách hàng
-      operationId: getCustomers
-
+      tags: [Customers]
+      summary: Xem danh sách khách hàng
+      description: FR19, UC10.
+      operationId: listCustomers
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Danh sách khách hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerList'
+        '403':
+          description: Không có quyền
 
-  /customers/{customerId}:
+  /admin/customers/{customerId}:
     get:
-      tags:
-        - Customers
-      summary: Xem khách hàng
+      tags: [Customers]
+      summary: Xem thông tin khách hàng
+      description: FR19, UC10.
       operationId: getCustomer
-
+      security:
+        - bearerAuth: []
       parameters:
-        - name: customerId
-          in: path
-          required: true
-          schema:
-            type: integer
-
+        - $ref: '#/components/parameters/CustomerId'
       responses:
         '200':
           description: Thông tin khách hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy khách hàng
 
-  /drivers:
+  /admin/drivers:
     get:
-      tags:
-        - Drivers
-      summary: Danh sách tài xế
-      operationId: getDrivers
-
+      tags: [Drivers]
+      summary: Xem danh sách tài xế
+      description: FR19, UC11.
+      operationId: listDrivers
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Danh sách tài xế
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverList'
+        '403':
+          description: Không có quyền
 
-  /drivers/{driverId}:
+  /admin/drivers/{driverId}:
     get:
-      tags:
-        - Drivers
+      tags: [Drivers]
       summary: Xem thông tin tài xế
+      description: FR19, UC11.
       operationId: getDriver
-
+      security:
+        - bearerAuth: []
       parameters:
-        - name: driverId
-          in: path
-          required: true
-          schema:
-            type: integer
-
+        - $ref: '#/components/parameters/DriverId'
       responses:
         '200':
           description: Thông tin tài xế
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy tài xế
 
-  /vehicles:
+  /admin/vehicles:
     get:
-      tags:
-        - Vehicles
-      summary: Danh sách phương tiện
-      operationId: getVehicles
-
+      tags: [Vehicles]
+      summary: Xem danh sách phương tiện
+      description: FR19, UC11.
+      operationId: listVehicles
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Danh sách phương tiện
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleList'
+        '403':
+          description: Không có quyền
 
-  /trips:
+  /admin/trips:
     get:
-      tags:
-        - Trips
-      summary: Danh sách chuyến xe
-      operationId: getTrips
-
+      tags: [Trips]
+      summary: Xem và giám sát danh sách chuyến
+      description: FR19, UC12.
+      operationId: listTrips
+      security:
+        - bearerAuth: []
       responses:
         '200':
-          description: Danh sách chuyến xe
+          description: Danh sách chuyến
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripList'
+        '403':
+          description: Không có quyền
 
-  /trips/ongoing:
+  /admin/trips/{tripId}:
     get:
-      tags:
-        - Trips
-      summary: Xem các chuyến đang diễn ra
-      operationId: getOngoingTrips
-
-      responses:
-        '200':
-          description: Danh sách chuyến đang diễn ra
-
-  /trips/{tripId}:
-    get:
-      tags:
-        - Trips
-      summary: Xem chi tiết chuyến xe
-      operationId: getTrip
-
+      tags: [Trips]
+      summary: Xem chi tiết chuyến
+      description: FR19, UC12.
+      operationId: getAdminTrip
+      security:
+        - bearerAuth: []
       parameters:
-        - name: tripId
-          in: path
-          required: true
-          schema:
-            type: integer
-
+        - $ref: '#/components/parameters/TripId'
       responses:
         '200':
-          description: Chi tiết chuyến xe
+          description: Chi tiết chuyến
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '403':
+          description: Không có quyền
+        '404':
+          description: Không tìm thấy chuyến
 
-  /transactions:
+  /admin/transactions:
     get:
-      tags:
-        - Transactions
+      tags: [Transactions]
       summary: Tra cứu lịch sử giao dịch
-      operationId: getTransactions
-
+      description: UC13. Operations Staff tra cứu các giao dịch thanh toán.
+      operationId: listTransactions
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Danh sách giao dịch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        '403':
+          description: Không có quyền
+
+  /admin/audit-logs:
+    get:
+      tags: [Audit]
+      summary: Tra cứu audit log
+      description: FR20, BRU05.
+      operationId: listAuditLogs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Nhật ký thao tác
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogList'
+        '403':
+          description: Không có quyền
+
+  /admin/reports:
+    get:
+      tags: [Reports]
+      summary: Xem báo cáo thống kê
+      description: |
+        FR21. Báo cáo số lượng chuyến, doanh thu,
+        tỷ lệ hoàn thành/hủy chuyến và hiệu quả tài xế.
+      operationId: getReports
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Báo cáo thống kê
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '403':
+          description: Không có quyền
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: KH001
+    DriverId:
+      name: driverId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: TX001
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: CD001
+
+  schemas:
+    Customer:
+      type: object
+      properties:
+        customerId:
+          type: string
+          example: KH001
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+
+    CustomerList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+        total:
+          type: integer
+
+    Driver:
+      type: object
+      properties:
+        driverId:
+          type: string
+          example: TX001
+        fullName:
+          type: string
+        phone:
+          type: string
+        availability:
+          type: string
+          enum: [READY, BUSY, OFFLINE]
+
+    DriverList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Driver'
+        total:
+          type: integer
+
+    Vehicle:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          example: VH001
+        driverId:
+          type: string
+          example: TX001
+        vehicleType:
+          type: string
+          enum: [MOTORBIKE, CAR]
+        licensePlate:
+          type: string
+          example: 51A-12345
+
+    VehicleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vehicle'
+        total:
+          type: integer
+
+    Trip:
+      type: object
+      properties:
+        tripId:
+          type: string
+          example: CD001
+        customerId:
+          type: string
+          example: KH001
+        driverId:
+          type: string
+          nullable: true
+          example: TX001
+        status:
+          type: string
+        fare:
+          type: number
+          format: double
+          nullable: true
+
+    TripList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trip'
+        total:
+          type: integer
+
+    Transaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          example: TXN001
+        paymentId:
+          type: string
+          example: PAY001
+        tripId:
+          type: string
+          example: CD001
+        amount:
+          type: number
+          format: double
+          example: 85000
+        status:
+          type: string
+          enum: [SUCCESS, FAILED]
+        createdAt:
+          type: string
+          format: date-time
+
+    TransactionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        total:
+          type: integer
+
+    AuditLog:
+      type: object
+      properties:
+        logId:
+          type: string
+          example: LOG001
+        actorId:
+          type: string
+          example: OPS001
+        action:
+          type: string
+          example: UPDATE_TRIP_STATUS
+        entityType:
+          type: string
+          example: TRIP
+        entityId:
+          type: string
+          example: CD001
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditLogList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+        total:
+          type: integer
+
+    ReportResponse:
+      type: object
+      properties:
+        totalTrips:
+          type: integer
+          example: 1250
+        totalRevenue:
+          type: number
+          format: double
+          example: 98500000
+        completedTrips:
+          type: integer
+          example: 1100
+        cancelledTrips:
+          type: integer
+          example: 150
+        completionRate:
+          type: number
+          format: double
+          example: 88.0
+        cancellationRate:
+          type: number
+          format: double
+          example: 12.0
+        driverEfficiency:
+          type: number
+          format: double
+          example: 87.5
