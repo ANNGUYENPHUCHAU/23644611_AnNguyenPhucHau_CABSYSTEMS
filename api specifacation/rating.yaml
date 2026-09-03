@@ -1,1 +1,119 @@
+openapi: 3.0.3
 
+info:
+  title: CAB System - Rating Service API
+  description: API lịch sử chuyến xe và đánh giá tài xế
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8086/api/v1
+    description: Local server
+
+tags:
+  - name: Trip History
+    description: Lịch sử chuyến xe
+  - name: Rating
+    description: Đánh giá tài xế
+
+paths:
+
+  /customers/{customerId}/trips/history:
+    get:
+      tags:
+        - Trip History
+      summary: Xem lịch sử chuyến xe
+      operationId: getCustomerTripHistory
+
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Lịch sử chuyến xe
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripHistoryResponse'
+
+  /ratings:
+    post:
+      tags:
+        - Rating
+      summary: Đánh giá tài xế
+      operationId: createRating
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequest'
+
+      responses:
+        '201':
+          description: Đánh giá được ghi nhận
+
+        '400':
+          description: Dữ liệu đánh giá không hợp lệ
+
+        '409':
+          description: Chuyến xe không đủ điều kiện đánh giá
+
+components:
+
+  schemas:
+
+    TripHistoryResponse:
+      type: object
+      properties:
+        tripId:
+          type: integer
+          example: 1001
+        driverId:
+          type: integer
+          example: 25
+        pickupLocation:
+          type: string
+          example: "IUH"
+        destination:
+          type: string
+          example: "Ben Thanh"
+        fare:
+          type: number
+          format: double
+          example: 85000
+        completedAt:
+          type: string
+          format: date-time
+
+    RatingRequest:
+      type: object
+      required:
+        - tripId
+        - customerId
+        - driverId
+        - ratingValue
+      properties:
+        tripId:
+          type: integer
+          example: 1001
+        customerId:
+          type: integer
+          example: 1
+        driverId:
+          type: integer
+          example: 25
+        ratingValue:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: Tài xế phục vụ tốt.
