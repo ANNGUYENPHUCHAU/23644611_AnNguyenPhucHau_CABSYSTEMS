@@ -1,1 +1,144 @@
+openapi: 3.0.3
 
+info:
+  title: CAB System - Operations Service API
+  description: API quản lý và giám sát hoạt động vận hành CAB System
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8087/api/v1
+    description: Local server
+
+tags:
+  - name: Customers
+    description: Quản lý khách hàng
+  - name: Drivers
+    description: Quản lý tài xế
+  - name: Vehicles
+    description: Quản lý phương tiện
+  - name: Trips
+    description: Quản lý và giám sát chuyến xe
+  - name: Transactions
+    description: Tra cứu lịch sử giao dịch
+
+paths:
+
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: Danh sách khách hàng
+      operationId: getCustomers
+
+      responses:
+        '200':
+          description: Danh sách khách hàng
+
+  /customers/{customerId}:
+    get:
+      tags:
+        - Customers
+      summary: Xem khách hàng
+      operationId: getCustomer
+
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Thông tin khách hàng
+
+  /drivers:
+    get:
+      tags:
+        - Drivers
+      summary: Danh sách tài xế
+      operationId: getDrivers
+
+      responses:
+        '200':
+          description: Danh sách tài xế
+
+  /drivers/{driverId}:
+    get:
+      tags:
+        - Drivers
+      summary: Xem thông tin tài xế
+      operationId: getDriver
+
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Thông tin tài xế
+
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: Danh sách phương tiện
+      operationId: getVehicles
+
+      responses:
+        '200':
+          description: Danh sách phương tiện
+
+  /trips:
+    get:
+      tags:
+        - Trips
+      summary: Danh sách chuyến xe
+      operationId: getTrips
+
+      responses:
+        '200':
+          description: Danh sách chuyến xe
+
+  /trips/ongoing:
+    get:
+      tags:
+        - Trips
+      summary: Xem các chuyến đang diễn ra
+      operationId: getOngoingTrips
+
+      responses:
+        '200':
+          description: Danh sách chuyến đang diễn ra
+
+  /trips/{tripId}:
+    get:
+      tags:
+        - Trips
+      summary: Xem chi tiết chuyến xe
+      operationId: getTrip
+
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Chi tiết chuyến xe
+
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: Tra cứu lịch sử giao dịch
+      operationId: getTransactions
+
+      responses:
+        '200':
+          description: Danh sách giao dịch
