@@ -1,1 +1,219 @@
+openapi: 3.0.3
+info:
+  title: CAB System - User Service API
+  description: |
+    API quản lý tài khoản khách hàng của CAB System.
+    Traceability: FR01-FR02, UC01, AC01.
+  version: 1.0.0
 
+servers:
+  - url: http://localhost:8081/api/v1
+    description: Local User Service
+
+tags:
+  - name: Authentication
+    description: FR01 - Đăng ký và đăng nhập tài khoản khách hàng
+  - name: Customer
+    description: FR02 - Cập nhật hồ sơ khách hàng
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Đăng ký tài khoản khách hàng
+      description: FR01, UC01, AC01.
+      operationId: registerCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCustomerRequest'
+      responses:
+        '201':
+          description: Đăng ký tài khoản thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Thông tin đăng ký không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Tài khoản đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Đăng nhập khách hàng
+      description: FR01, UC01, AC01.
+      operationId: loginCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Thông tin đăng nhập không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Sai email hoặc mật khẩu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/me:
+    get:
+      tags: [Customer]
+      summary: Xem hồ sơ khách hàng
+      description: FR02, UC01, AC01.
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lấy hồ sơ thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '401':
+          description: Chưa xác thực
+
+    put:
+      tags: [Customer]
+      summary: Cập nhật hồ sơ khách hàng
+      description: FR02, UC01, AC01.
+      operationId: updateMyProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Dữ liệu không hợp lệ
+        '401':
+          description: Chưa xác thực
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterCustomerRequest:
+      type: object
+      required: [fullName, phone, email, password]
+      properties:
+        fullName:
+          type: string
+          example: Nguyen Van A
+        phone:
+          type: string
+          example: '0901234567'
+        email:
+          type: string
+          format: email
+          example: nguyenvana@gmail.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: '123456'
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: nguyenvana@gmail.com
+        password:
+          type: string
+          format: password
+          example: '123456'
+
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: Nguyen Van A
+        phone:
+          type: string
+          example: '0901234567'
+        email:
+          type: string
+          format: email
+          example: nguyenvana@gmail.com
+
+    CustomerResponse:
+      type: object
+      required: [customerId, fullName, phone, email]
+      properties:
+        customerId:
+          type: string
+          example: KH001
+        fullName:
+          type: string
+          example: Nguyen Van A
+        phone:
+          type: string
+          example: '0901234567'
+        email:
+          type: string
+          format: email
+          example: nguyenvana@gmail.com
+
+    LoginResponse:
+      type: object
+      required: [accessToken, customer]
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIs...
+        customer:
+          $ref: '#/components/schemas/CustomerResponse'
+
+    ErrorResponse:
+      type: object
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: Thông tin không hợp lệ
