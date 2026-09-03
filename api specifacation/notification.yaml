@@ -1,1 +1,109 @@
+openapi: 3.0.3
 
+info:
+  title: CAB System - Notification Service API
+  description: API gửi thông báo cho khách hàng và tài xế
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8085/api/v1
+    description: Local server
+
+tags:
+  - name: Notification
+    description: Quản lý thông báo
+
+paths:
+
+  /notifications:
+    post:
+      tags:
+        - Notification
+      summary: Gửi thông báo
+      operationId: sendNotification
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+
+      responses:
+        '202':
+          description: Yêu cầu gửi thông báo được tiếp nhận
+
+        '400':
+          description: Dữ liệu thông báo không hợp lệ
+
+  /notifications:
+    get:
+      tags:
+        - Notification
+      summary: Xem danh sách thông báo
+      operationId: getNotifications
+
+      responses:
+        '200':
+          description: Danh sách thông báo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponse'
+
+components:
+
+  schemas:
+
+    NotificationRequest:
+      type: object
+      required:
+        - recipientId
+        - recipientType
+        - eventType
+        - message
+      properties:
+        recipientId:
+          type: integer
+          example: 1
+        recipientType:
+          type: string
+          enum:
+            - CUSTOMER
+            - DRIVER
+        eventType:
+          type: string
+          enum:
+            - BOOKING_RECEIVED
+            - DRIVER_ASSIGNED
+            - DRIVER_ARRIVED
+            - TRIP_COMPLETED
+            - PAYMENT_RESULT
+            - TRIP_UPDATED
+            - NEW_TRIP
+        message:
+          type: string
+          example: Tài xế đã nhận chuyến của bạn.
+
+    NotificationResponse:
+      type: object
+      properties:
+        notificationId:
+          type: integer
+          example: 1
+        recipientId:
+          type: integer
+          example: 1
+        recipientType:
+          type: string
+          example: CUSTOMER
+        eventType:
+          type: string
+          example: DRIVER_ASSIGNED
+        message:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
