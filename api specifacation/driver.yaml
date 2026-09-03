@@ -1,1 +1,219 @@
+openapi: 3.0.3
 
+info:
+  title: CAB System - Driver Service API
+  description: API quản lý tài xế, phương tiện và vị trí tài xế
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8082/api/v1
+    description: Local server
+
+tags:
+  - name: Driver
+    description: Quản lý tài xế
+  - name: Vehicle
+    description: Quản lý phương tiện
+  - name: Location
+    description: Quản lý vị trí tài xế
+
+paths:
+
+  /drivers:
+    post:
+      tags:
+        - Driver
+      summary: Tạo tài khoản tài xế
+      operationId: createDriver
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverRequest'
+
+      responses:
+        '201':
+          description: Tạo tài khoản tài xế thành công
+
+        '400':
+          description: Dữ liệu không hợp lệ
+
+  /drivers/{driverId}:
+    get:
+      tags:
+        - Driver
+      summary: Xem thông tin tài xế
+      operationId: getDriver
+
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+
+      responses:
+        '200':
+          description: Lấy thông tin thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+
+        '404':
+          description: Không tìm thấy tài xế
+
+  /drivers/{driverId}/status:
+    put:
+      tags:
+        - Driver
+      summary: Cập nhật trạng thái hoạt động
+      operationId: updateDriverStatus
+
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverStatusRequest'
+
+      responses:
+        '200':
+          description: Cập nhật trạng thái thành công
+
+  /drivers/{driverId}/vehicle:
+    put:
+      tags:
+        - Vehicle
+      summary: Cập nhật thông tin phương tiện
+      operationId: updateVehicle
+
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+
+      responses:
+        '200':
+          description: Cập nhật phương tiện thành công
+
+  /drivers/{driverId}/location:
+    post:
+      tags:
+        - Location
+      summary: Cập nhật vị trí tài xế
+      operationId: updateDriverLocation
+
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationRequest'
+
+      responses:
+        '200':
+          description: Vị trí được cập nhật
+
+components:
+
+  parameters:
+
+    DriverId:
+      name: driverId
+      in: path
+      required: true
+      schema:
+        type: integer
+      example: 1
+
+  schemas:
+
+    DriverRequest:
+      type: object
+      required:
+        - fullName
+        - phone
+        - email
+      properties:
+        fullName:
+          type: string
+          example: Tran Van B
+        phone:
+          type: string
+          example: "0912345678"
+        email:
+          type: string
+          format: email
+          example: driver@gmail.com
+
+    DriverResponse:
+      type: object
+      properties:
+        driverId:
+          type: integer
+          example: 1
+        fullName:
+          type: string
+          example: Tran Van B
+        phone:
+          type: string
+          example: "0912345678"
+        email:
+          type: string
+          example: driver@gmail.com
+        status:
+          type: string
+          enum:
+            - AVAILABLE
+            - UNAVAILABLE
+          example: AVAILABLE
+
+    DriverStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - AVAILABLE
+            - UNAVAILABLE
+          example: AVAILABLE
+
+    VehicleRequest:
+      type: object
+      required:
+        - vehicleType
+        - licensePlate
+      properties:
+        vehicleType:
+          type: string
+          example: CAR
+        licensePlate:
+          type: string
+          example: 51A-12345
+
+    LocationRequest:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          example: 10.8231
+        longitude:
+          type: number
+          format: double
+          example: 106.6297
