@@ -1,0 +1,45 @@
+﻿Sheet,Test Case ID,Test Scenario,Test Case,Preconditions,Test Steps,Test Data,Expected Result,Priority
+Auth,TC-AUTH-001,Đăng ký tài khoản khách hàng,Đăng ký với thông tin hợp lệ,Khách hàng chưa tồn tại,"1. Mở đăng ký
+2. Nhập thông tin
+3. Submit","Họ tên: Nguyen Van A
+SĐT: 0901234567
+Email hợp lệ
+Password hợp lệ",Tạo tài khoản thành công,High
+Auth,TC-AUTH-002,Đăng ký tài khoản khách hàng,Đăng ký bằng SĐT/email đã tồn tại,Đã có tài khoản,Nhập thông tin trùng và đăng ký,SĐT/email đã tồn tại,Đăng ký thất bại; báo lỗi dữ liệu đã tồn tại,High
+Auth,TC-AUTH-003,Đăng ký tài khoản khách hàng,Để trống trường bắt buộc,Đang ở màn hình đăng ký,Bỏ trống dữ liệu và submit,Name=null; Phone=null; Password=null,Validation lỗi; yêu cầu nhập đầy đủ thông tin,High
+Auth,TC-AUTH-004,Đăng ký tài khoản khách hàng,Email sai định dạng,Đang ở màn hình đăng ký,Nhập email sai,Email=abc.com,Từ chối dữ liệu email,Medium
+Auth,TC-AUTH-005,Đăng nhập khách hàng,Đăng nhập hợp lệ,Có tài khoản,Nhập tài khoản mật khẩu,Email đúng; Password đúng,Đăng nhập thành công; cấp quyền truy cập,High
+Auth,TC-AUTH-006,Đăng nhập khách hàng,Sai mật khẩu,Có tài khoản,Nhập sai password,Password sai,Trả lỗi xác thực,High
+Auth,TC-AUTH-007,Đăng nhập khách hàng,Exception khi xác thực,Hệ thống lỗi,Gửi request login,Authentication service timeout,Trả lỗi hệ thống,High
+Customer_Driver_Profile,TC-PROFILE-001,Quản lý hồ sơ Customer/Driver,Cập nhật thông tin hợp lệ,Đã đăng nhập,Sửa thông tin và lưu,"Tên, SĐT, Email hợp lệ",Cập nhật thành công,High
+Customer_Driver_Profile,TC-PROFILE-002,Quản lý hồ sơ Customer/Driver,Số điện thoại sai định dạng,Đã đăng nhập,Nhập SĐT sai,Phone=12345,Không lưu; báo lỗi định dạng,Medium
+Customer_Driver_Profile,TC-PROFILE-003,Quản lý hồ sơ Customer/Driver,Dữ liệu rỗng,Đang cập nhật,Xóa trường bắt buộc,Name=null,Không cho lưu,High
+Customer_Driver_Profile,TC-PROFILE-004,Quản lý hồ sơ Customer/Driver,Không được sửa dữ liệu người khác,Customer A đăng nhập,Truy cập dữ liệu Customer B,UserId khác tài khoản,Từ chối truy cập theo Business Rule,High
+Trip_Booking,TC-TRIP-001,Đặt chuyến xe,Tạo chuyến thành công,Customer đã đăng nhập,"Nhập điểm đón, điểm đến, loại xe","Pickup=IUH
+Destination=Airport
+Vehicle=CAR",Tạo Trip thành công; trạng thái chờ tìm Driver,High
+Trip_Booking,TC-TRIP-002,Đặt chuyến xe,Thiếu điểm đón,Customer đã đăng nhập,Submit khi thiếu pickup,Pickup=null,Không tạo Trip; báo lỗi,High
+Trip_Booking,TC-TRIP-003,Đặt chuyến xe,Loại xe không hợp lệ,Customer đã đăng nhập,Gửi loại xe không tồn tại,VehicleType=ABC,Báo lỗi dữ liệu,Medium
+Trip_Booking,TC-TRIP-004,Đặt chuyến xe,Customer chưa đăng nhập,Chưa có token,Gửi request tạo Trip,Token=null,401 Unauthorized,High
+Trip_Booking,TC-TRIP-005,Đặt chuyến xe,Service tạo Trip lỗi,Database lỗi,Gửi request hợp lệ,DB timeout,500 System Error,High
+Trip_Tracking,TC-TRACK-001,Theo dõi chuyến xe,Xem trạng thái chuyến,Có Trip hợp lệ,Gọi API theo dõi,TripId tồn tại,"Trả trạng thái, Driver, ETA",High
+Trip_Tracking,TC-TRACK-002,Theo dõi chuyến xe,Trip không tồn tại,Không có Trip,Gọi API,TripId sai,404 Not Found,Medium
+Trip_Tracking,TC-TRACK-003,Theo dõi chuyến xe,Dữ liệu trạng thái rỗng,Có Trip,Update status,Status=null,400 Bad Request,Medium
+Matching_Dispatch,TC-MATCH-001,Tìm và phân công tài xế,Driver phù hợp,Có Driver Available,Hệ thống tìm Driver,Status=AVAILABLE; đúng vị trí,Driver được chọn và gửi yêu cầu,High
+Matching_Dispatch,TC-MATCH-002,Tìm và phân công tài xế,Driver Busy không được chọn,Có Driver Busy,Thực hiện matching,Status=BUSY,Không chọn Driver theo BRL01,High
+Matching_Dispatch,TC-MATCH-003,Tìm và phân công tài xế,Driver từ chối chuyến,Driver nhận request,Reject chuyến,Action=Reject,Tìm Driver khác,High
+Matching_Dispatch,TC-MATCH-004,Tìm và phân công tài xế,Không có Driver,Không có Driver phù hợp,Matching,AvailableDriver=0,Thông báo không tìm được Driver,High
+Fare_Payment,TC-PAY-001,Tính cước và thanh toán,Thanh toán thành công,Trip hoàn thành,Thanh toán,Method=CASH/ONLINE,Thanh toán thành công,High
+Fare_Payment,TC-PAY-002,Tính cước và thanh toán,Thanh toán thất bại,Trip hoàn thành,Thanh toán lỗi,Transaction=FAILED,Cho phép retry theo Business Rule,High
+Fare_Payment,TC-PAY-003,Tính cước và thanh toán,Thiếu phương thức thanh toán,Có hóa đơn,Submit payment,Method=null,400 Bad Request,Medium
+Fare_Payment,TC-PAY-004,Tính cước và thanh toán,Payment Provider lỗi,Có giao dịch,Gọi provider,Timeout,Thông báo lỗi hệ thống,High
+Rating,TC-RATE-001,Đánh giá tài xế,Đánh giá hợp lệ,Trip completed,Gửi rating,Rating=5,Lưu đánh giá thành công,Medium
+Rating,TC-RATE-002,Đánh giá tài xế,Rating vượt giới hạn,Trip completed,Gửi rating,Rating=10,Báo lỗi giá trị biên,Medium
+Rating,TC-RATE-003,Đánh giá tài xế,Đánh giá khi chưa hoàn thành,Trip đang chạy,Gửi rating,Status=IN_PROGRESS,Từ chối theo Business Rule,High
+Cancel_Trip,TC-CANCEL-001,Hủy chuyến xe,Hủy chuyến hợp lệ,Trip đang chờ,Chọn hủy,TripStatus=SEARCHING_DRIVER,Hủy thành công,High
+Cancel_Trip,TC-CANCEL-002,Hủy chuyến không hợp lệ,Trip đã hoàn thành,Trip completed,Chọn hủy,Status=COMPLETED,Không cho hủy,Medium
+Notification,TC-NOTI-001,Thông báo,Gửi thông báo trạng thái chuyến,Có sự kiện,Trigger event,Driver accepted trip,Customer nhận thông báo,High
+Notification,TC-NOTI-002,Thông báo,Notification service lỗi,Service lỗi,Trigger event,Timeout,Xử lý exception,Medium
+Admin_Operations,TC-ADMIN-001,Quản lý vận hành,Nhân viên có quyền truy cập,Có quyền Admin,Truy cập quản trị,Role=Operations Staff,Truy cập thành công,High
+Admin_Operations,TC-ADMIN-002,Quản lý vận hành,Không có quyền,Customer login,Truy cập admin,Role=Customer,403 Forbidden,High
+Admin_Operations,TC-ADMIN-003,Quản lý vận hành,Lỗi hệ thống khi báo cáo,Có quyền,Tạo báo cáo,Database timeout,Thông báo lỗi hệ thống,Medium
